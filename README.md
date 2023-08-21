@@ -51,6 +51,7 @@ Imagen de la hoja:
 
 COMPOSICION: Sirve como referencia para el programa para ver la composición de los productos para después ir a descontarlos a la hoja INVENTARIO
 Imagen de la hoja: 
+
 ![image](https://github.com/Meinhof-code/TPBHT/assets/68880191/d596672e-9af6-489c-ba0b-24d0b9c5505d)
 
 ## Requisitos del Sistema
