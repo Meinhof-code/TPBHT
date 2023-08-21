@@ -34,13 +34,16 @@ TICKETS: Almacena los tickets generados en la hoja CAJA.
 Imagen de la hoja: 
 ![image](https://github.com/Meinhof-code/TPBHT/assets/68880191/d85caeff-d2f6-405a-a20b-803bfb56efb9)
 
+
 INVENTARIO: Almacena los datos del inventario y se actualiza constantemente por los pedidos generados en la hoja CAJA
 Imagen de la hoja: 
 ![image](https://github.com/Meinhof-code/TPBHT/assets/68880191/2d832e22-c3bf-467b-b3f0-a0b00bba78dc)
 
+
 BALANCE: Almacena los datos de las ventas y se actualiza constantemente por los pedidos generados en la hoja CAJA
 Imagen de la hoja: 
 ![image](https://github.com/Meinhof-code/TPBHT/assets/68880191/cabd7331-d774-4da8-9a26-187adf073a10)
+
 
 COMPOSICION: Sirve como referencia para el programa para ver la composición de los productos para después ir a descontarlos a la hoja INVENTARIO
 Imagen de la hoja: 
