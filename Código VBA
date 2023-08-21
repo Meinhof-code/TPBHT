@@ -1,0 +1,319 @@
+Código del formulario (VBA): 
+
+Dim nombreProducto As String
+
+Private Sub AddProductToOrder(productName As String, price As Double)
+    Dim Multiplicador As Integer
+    Dim i As Integer
+    Dim foundIndex As Integer
+    Dim existingQuantity As Integer
+    Dim existingPrice As Double
+    Dim newPrice As Double
+
+    If IsNumeric(TextBoxMultiplicador.Value) Then
+        Multiplicador = CInt(TextBoxMultiplicador.Value)
+    Else
+        Multiplicador = 1 ' Por defecto, si no hay un valor válido, se asume 1
+    End If
+
+    newPrice = price * Multiplicador
+
+    ' Verificar si el producto ya existe en la lista
+    foundIndex = -1
+    For i = 0 To ListaProductos.ListCount - 1
+        If InStr(1, ListaProductos.List(i), productName) > 0 Then
+            foundIndex = i
+            Exit For
+        End If
+    Next i
+
+    ' Si el producto ya está en la lista, actualiza la cantidad y el precio
+    If foundIndex > -1 Then
+        ' Detectamos si el formato es "Nx" o solo el producto
+        If InStr(1, ListaProductos.List(foundIndex), "x") > 0 Then
+            existingQuantity = CInt(Split(Split(ListaProductos.List(foundIndex), " ")(0), "x")(0))
+        Else
+            existingQuantity = 1 ' Si no tiene el formato "Nx", entonces solo hay 1 producto
+        End If
+        
+        existingPrice = ExtractPrice(ListaProductos.List(foundIndex))
+        ListaProductos.List(foundIndex) = (existingQuantity + Multiplicador) & "x " & productName & " - $" & (existingPrice + newPrice)
+    Else
+        ' Si no, simplemente agrega el nuevo producto
+        If Multiplicador > 1 Then
+            Me.ListaProductos.AddItem Multiplicador & "x " & productName & " - $" & newPrice
+        Else
+            Me.ListaProductos.AddItem productName & " - $" & price
+        End If
+    End If
+
+    ' Actualizar el total
+    Me.TotalTextBox.Value = CStr(CDbl(Me.TotalTextBox.Value) + newPrice)
+
+    ' Restablecer el multiplicador
+    TextBoxMultiplicador.Value = ""
+End Sub
+
+Private Sub AceptarButton_Click()
+    Dim ws As Worksheet
+    Dim i As Integer
+    Dim lastRow As Long
+    Dim folio As Long
+
+    ' Utiliza la función GenerarFolio para obtener un nuevo folio
+    folio = GenerarFolio()
+
+    ' Referencia a la hoja "Hoja3"
+    Set ws = ThisWorkbook.Sheets(2)
+
+    ' Encuentra la última fila con contenido en la columna 1
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    ' Si hay contenido, avanza 2 filas para empezar a escribir (para dejar una fila vacía entre registros)
+    If ws.Cells(lastRow, 1).Value <> "" Or ws.Cells(lastRow, 2).Value <> "" Or ws.Cells(lastRow, 3).Value <> "" Then
+        lastRow = lastRow + 2
+    End If
+
+    ' Añade fecha y hora del pedido en una fila sola
+    ws.Cells(lastRow, 1).Value = Now
+
+    ' Agrega el folio del ticket en la columna C
+    ws.Cells(lastRow, 3).Value = "Folio: " & folio
+
+    ' Guarda cada producto del pedido en la columna B y su precio en la columna D
+    Dim nombreProducto As String
+    For i = 0 To ListaProductos.ListCount - 1
+        nombreProducto = Split(ListaProductos.List(i), " - $")(0)
+        ws.Cells(lastRow + i + 1, 2).Value = nombreProducto 'Producto
+        ws.Cells(lastRow + i + 1, 4).Value = ExtractPrice(ListaProductos.List(i)) 'Precio
+
+        'Ajusta el inventario según el producto vendido
+        AjustarInventario nombreProducto
+    Next i
+
+     ' Después de agregar todos los productos, en la fila siguiente agregamos el total
+    ws.Cells(lastRow + ListaProductos.ListCount + 1, 2).Value = "Total:"
+    ws.Cells(lastRow + ListaProductos.ListCount + 1, 4).Value = TotalTextBox.Value
+
+    ' Agregar el método de pago seleccionado
+    ws.Cells(lastRow + ListaProductos.ListCount + 2, 2).Value = "Método de pago:"
+    ws.Cells(lastRow + ListaProductos.ListCount + 2, 4).Value = ComboBoxMetodoPago.Value
+
+    ' Agregar la fuente del pedido (UberEats, DidiFood, Restaurante)
+    ws.Cells(lastRow + ListaProductos.ListCount + 3, 2).Value = "Fuente del Pedido:"
+    ws.Cells(lastRow + ListaProductos.ListCount + 3, 4).Value = ComboBoxFuentePedido.Value
+
+    ' Añade un separador en la columna A al lado del total
+    ws.Cells(lastRow + ListaProductos.ListCount + 4, 1).Value = "----------------------------------------------------------------------------------"
+
+    ActualizarBalance ListaProductos, ComboBoxMetodoPago, ComboBoxFuentePedido
+
+    ' Limpia el UserForm
+    ListaProductos.Clear
+    TotalTextBox.Value = ""
+
+    ' Esconde el UserForm
+    Me.Hide
+
+End Sub
+
+
+Private Sub BotonClasico_Click()
+    AddProductToOrder "Perrillo Clásico", 49
+End Sub
+
+Private Sub BotonCostco_Click()
+    AddProductToOrder "Perrillo Kirkland", 70
+End Sub
+
+Private Sub BotonJumbo_Click()
+    AddProductToOrder "Perrillo Jumbo", 70
+End Sub
+
+Private Sub BotonMaton_Click()
+    AddProductToOrder "Perrillo Matón", 65
+End Sub
+
+Private Sub BotonMayer_Click()
+    AddProductToOrder "Perrillo Mayer", 68
+End Sub
+
+Private Sub CancelarButton_Click()
+    'Limpia el UserForm
+    ListaProductos.Clear
+    TotalTextBox.Value = ""
+    'Esconde el UserForm
+    Me.Hide
+End Sub
+
+Private Sub ComboBoxFuentePedido_Change()
+
+End Sub
+
+Private Sub Image1_BeforeDragOver(ByVal Cancel As MSForms.ReturnBoolean, ByVal Data As MSForms.DataObject, ByVal X As Single, ByVal Y As Single, ByVal DragState As MSForms.fmDragState, ByVal Effect As MSForms.ReturnEffect, ByVal Shift As Integer)
+End Sub
+
+Private Sub Label1_Click()
+End Sub
+
+Private Sub TextBoxMultiplicador_Change()
+End Sub
+Private Sub UserForm_Initialize()
+    TotalTextBox.Value = 0
+    Me.ComboBoxRefrescos.AddItem "Regular"
+    Me.ComboBoxRefrescos.AddItem "Sabor"
+    Me.ComboBoxRefrescos.AddItem "Agua"
+
+    ' Inicializar el ComboBox del método de pago
+    Me.ComboBoxMetodoPago.AddItem "Efectivo"
+    Me.ComboBoxMetodoPago.AddItem "Tarjeta"
+    Me.ComboBoxMetodoPago.Value = "Efectivo" ' Valor por defecto
+    
+    ' Inicializar el ComboBox del método de pago
+    Me.ComboBoxFuentePedido.AddItem "Restaurante"
+    Me.ComboBoxFuentePedido.AddItem "UberEats"
+    Me.ComboBoxFuentePedido.AddItem "DidiFood"
+    Me.ComboBoxFuentePedido.Value = "Restaurante" ' Valor por defecto
+End Sub
+Private Sub EliminarProductoButton_Click()
+    If ListaProductos.ListIndex <> -1 Then 'Verifica que un producto esté seleccionado
+        'Actualiza el total
+        Dim precioProducto As Double
+        precioProducto = Split(ListaProductos.Value, "- $")(1)
+        TotalTextBox.Value = CStr(CDbl(TotalTextBox.Value) - precioProducto)
+
+        'Elimina el producto seleccionado de la lista
+        ListaProductos.RemoveItem ListaProductos.ListIndex
+    Else
+        MsgBox "Selecciona un producto de la lista para eliminar.", vbExclamation
+    End If
+End Sub
+
+Function ExtractPrice(s As String) As Double
+    Dim priceStr As String
+    priceStr = Trim(Split(s, "- $")(1))
+    ExtractPrice = CDbl(priceStr)
+End Function
+Private Sub ComboBoxRefrescos_Click()
+    Dim seleccionado As String
+    Dim producto As String
+    Dim precio As Double
+    
+    seleccionado = Me.ComboBoxRefrescos.Value
+    
+    Select Case seleccionado
+        Case "Regular"
+            producto = "Refresco regular"
+            precio = 25
+        Case "Sabor"
+            producto = "Refresco sabor"
+            precio = 25
+        Case "Agua"
+            producto = "Agua"
+            precio = 25
+        Case Else
+            Exit Sub ' Si no hay coincidencia, salimos del Sub
+    End Select
+    
+    AddProductToOrder producto, precio
+    ComboBoxRefrescos.Value = "" ' Restablecer la selección de la combobox
+End Sub
+
+Sub AjustarInventario(nombreProducto As String)
+    Dim wsComposicion As Worksheet
+    Dim wsInventario As Worksheet
+    Dim lastRow As Long
+    Dim i As Long, j As Long
+    Dim ingrediente As String
+    Dim cantidadNecesaria As Double
+    Dim cantidadRestante As Double
+
+    'Establece las hojas de trabajo
+    Set wsComposicion = ThisWorkbook.Sheets("COMPOSICION")
+    Set wsInventario = ThisWorkbook.Sheets("INVENTARIO")
+
+    'Busca el producto en la hoja "COMPOSICION"
+    lastRow = wsComposicion.Cells(wsComposicion.Rows.Count, "A").End(xlUp).Row
+    If nombreProducto = "Refresco regular" Or nombreProducto = "Refresco sabor" Or nombreProducto = "Agua" Then
+    For j = 2 To wsInventario.Cells(wsInventario.Rows.Count, "A").End(xlUp).Row
+        If wsInventario.Cells(j, 1).Value = nombreProducto Then
+            wsInventario.Cells(j, 3).Value = wsInventario.Cells(j, 3).Value + 1 ' Aumenta el consumo
+            Exit For
+        End If
+    Next j
+    Exit Sub ' Salimos del Sub porque ya ajustamos el inventario para las bebidas
+    End If
+    For i = 2 To lastRow
+        If wsComposicion.Cells(i, 1).Value = nombreProducto Then
+            'Una vez que encuentra el producto, identifica los ingredientes y cuánto de cada ingrediente se necesita
+            ingrediente = wsComposicion.Cells(i, 2).Value
+            cantidadNecesaria = wsComposicion.Cells(i, 3).Value
+
+            'Luego, busca ese ingrediente en la hoja "INVENTARIO"
+            For j = 2 To wsInventario.Cells(wsInventario.Rows.Count, "A").End(xlUp).Row
+                If wsInventario.Cells(j, 1).Value = ingrediente Then
+                    'Ajusta las cantidades
+                    ' wsInventario.Cells(j, 2).Value = wsInventario.Cells(j, 2).Value + cantidadNecesaria
+                    ' wsInventario.Cells(j, 3).Value = wsInventario.Cells(j, 3).Value - cantidadNecesaria
+                    wsInventario.Cells(j, 3).Value = wsInventario.Cells(j, 3).Value + Abs(cantidadNecesaria)
+                    Exit For
+                End If
+            Next j
+        End If
+    Next i
+End Sub
+Function GenerarFolio() As Long
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim lastFolio As String
+    Dim lastFolioNumber As Long
+
+    ' Referencia a la hoja "Hoja3"
+    Set ws = ThisWorkbook.Sheets(2)
+
+    ' Encuentra la última fila con contenido en la columna 3
+    lastRow = ws.Cells(ws.Rows.Count, 3).End(xlUp).Row
+
+    ' Si la última fila no contiene un folio, genera el folio 1
+    If InStr(1, ws.Cells(lastRow, 3).Value, "Folio:") = 0 Then
+        GenerarFolio = 1
+    Else
+        ' Si contiene un folio, extrae el número y súmale 1
+        lastFolio = ws.Cells(lastRow, 3).Value
+        lastFolioNumber = CLng(Replace(lastFolio, "Folio: ", ""))
+        GenerarFolio = lastFolioNumber + 1
+    End If
+End Function
+Sub ActualizarBalance(ByRef ListaProductos As MSForms.ListBox, ByRef ComboBoxMetodoPago As MSForms.ComboBox, ByRef ComboBoxFuentePedido As MSForms.ComboBox)
+
+    Dim wsBalance As Worksheet
+    Set wsBalance = ThisWorkbook.Sheets("BALANCE") ' Referencia directa por nombre
+
+    Dim lastRowBalance As Long
+    With wsBalance
+        If Application.WorksheetFunction.CountA(.Cells) <> 0 Then
+            lastRowBalance = .Cells.Find(What:="*", _
+                          After:=.Range("A1"), _
+                          Lookat:=xlPart, _
+                          LookIn:=xlFormulas, _
+                          SearchOrder:=xlByRows, _
+                          SearchDirection:=xlPrevious, _
+                          MatchCase:=False).Row + 1
+        Else
+            lastRowBalance = 1
+        End If
+    End With
+
+    ' Añade los datos al BALANCE
+    For i = 0 To ListaProductos.ListCount - 1
+        Dim nombreProducto As String
+        nombreProducto = Split(ListaProductos.List(i), " - $")(0)
+        wsBalance.Cells(lastRowBalance + i, 1).Value = Now
+        wsBalance.Cells(lastRowBalance + i, 2).Value = nombreProducto
+        wsBalance.Cells(lastRowBalance + i, 3).Value = 1 
+        wsBalance.Cells(lastRowBalance + i, 4).Value = ExtractPrice(ListaProductos.List(i))
+        wsBalance.Cells(lastRowBalance + i, 5).Value = ComboBoxMetodoPago.Value
+        wsBalance.Cells(lastRowBalance + i, 6).Value = ComboBoxFuentePedido.Value
+    Next i
+
+End Sub
